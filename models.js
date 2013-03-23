@@ -9,6 +9,13 @@ var userSchema = mongoose.Schema({
 	role:String
 })
 
+userSchema.methods.validPassword = function(password){
+	return this.password === password;
+}
+userSchema.method.isAdmin = function(){
+	return this.role === "admin";
+}
+
 // gaibuni sarasu
 var User = mongoose.model("User",userSchema);
 module.exports.User = User;

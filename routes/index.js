@@ -8,7 +8,7 @@ exports.index = function(req, res){
 };
 
 exports.login = function(req, res){
-  res.render('login', { title: 'Express' });
+  res.render('login', { title: 'Express', error_message: req.flash('error') });
 };
 
 exports.checkUser = function(req, res){

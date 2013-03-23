@@ -8,7 +8,37 @@ var express = require('express')
   , user = require('./routes/user')
   , http = require('http')
   , path = require('path')
-  , models = require('./models'); //add
+  , models = require('./models') //add
+  , passport = require('passport') //add
+  , LocalStrategy = require('passport-local').Strategy//add
+  , flash = require('connect-flash'); //add
+
+passport.use(new LocalStrategy(
+  function(username, password, done){
+    models.User.findOne({username: username}, function(err, user){
+      if(err){ return done(err)};
+      if (!user){
+        return done(null, false, {message: "ユーザーネームが間違ってる"})
+      }
+      if(! user.validPassword(password)){
+        return done(null, false, {message: "パスワードが間違ってるよ"});
+      };
+      return done(null, user);
+    })
+  }
+
+))
+
+passport.serializeUser(function(user, done){
+  done(null, user.id)
+})
+
+passport.deserializeUser(function(id, done){
+  models.User.findById(id, function(err, user){
+    done(err, user);
+  })
+})
+
 
 var app = express();
 
@@ -22,6 +52,9 @@ app.configure(function(){
   app.use(express.methodOverride());
   app.use(express.cookieParser('your secret here'));
   app.use(express.session());
+  app.use(flash());//add
+  app.use(passport.initialize());//add
+  app.use(passport.session());//add
   app.use(app.router);
   app.use(express.static(path.join(__dirname, 'public')));
 });
@@ -31,8 +64,14 @@ app.configure('development', function(){
 });
 
 app.get('/', routes.index);
+
 app.get('/login', routes.login);
-app.post('/login', routes.checkUser)
+app.post('/login', passport.authenticate('local', {successRedirect: '/',
+                                                   failureRedirect: '/login',
+                                                   failureFlash: true
+                                                 }
+                                        )
+)
 
 app.get('/users', user.list);
 
